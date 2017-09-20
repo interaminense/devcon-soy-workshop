@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
@@ -66,6 +67,12 @@ public class BlogsWebViewMVCRenderCommand implements MVCRenderCommand {
 				.stream()
 				.map(blog -> _blogMapper(blog))
 				.collect(Collectors.toList()));
+
+		PortletURL addBlogUrl = renderResponse.createRenderURL();
+
+		addBlogUrl.setParameter("mvcRenderCommandName", "Edit");
+
+		template.put("addBlogUrl", addBlogUrl.toString());
 
 		return "View";
 	}
