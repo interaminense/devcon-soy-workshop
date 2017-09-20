@@ -16,8 +16,12 @@ package blogs.web.portlet.action;
 
 import blogs.web.constants.BlogsWebPortletKeys;
 
+import com.liferay.blogs.kernel.model.BlogsEntry;
+import com.liferay.blogs.kernel.service.BlogsEntryLocalService;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.portal.kernel.template.Template;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import javax.portlet.ActionRequest;
@@ -26,6 +30,7 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Bruno Basto
@@ -49,11 +54,41 @@ public class BlogsWebEditMVCRenderCommand implements MVCRenderCommand {
 
 		PortletURL addBlogUrl = renderResponse.createActionURL();
 
-		addBlogUrl.setParameter(ActionRequest.ACTION_NAME, "Save");
+		long blogEntryId = ParamUtil.getLong(renderRequest, "blogEntryId");
+
+		boolean editMode = false;
+
+		if (blogEntryId > 0) {
+			editMode = true;
+		}
+
+		template.put("editMode", editMode);
+
+		if (editMode) {
+			try {
+				BlogsEntry blogsEntry = _blogsEntryLocalService.getEntry(
+					blogEntryId);
+
+				template.put("content", blogsEntry.getContent());
+				template.put("title", blogsEntry.getTitle());
+
+				addBlogUrl.setParameter(ActionRequest.ACTION_NAME, "Edit");
+				addBlogUrl.setParameter(
+					"blogEntryId", String.valueOf(blogEntryId));
+			} catch (PortalException e) {
+				e.printStackTrace();
+			}
+		}
+		else {
+			addBlogUrl.setParameter(ActionRequest.ACTION_NAME, "Save");
+		}
 
 		template.put("saveBlogUrl", addBlogUrl.toString());
 
 		return "Edit";
 	}
+
+	@Reference
+	private BlogsEntryLocalService _blogsEntryLocalService;
 
 }

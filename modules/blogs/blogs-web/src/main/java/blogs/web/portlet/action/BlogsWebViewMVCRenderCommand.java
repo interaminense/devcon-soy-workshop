@@ -65,7 +65,7 @@ public class BlogsWebViewMVCRenderCommand implements MVCRenderCommand {
 			"blogs",
 			blogs
 				.stream()
-				.map(blog -> _blogMapper(blog))
+				.map(blog -> _blogMapper(blog, renderResponse))
 				.collect(Collectors.toList()));
 
 		PortletURL addBlogUrl = renderResponse.createRenderURL();
@@ -77,7 +77,9 @@ public class BlogsWebViewMVCRenderCommand implements MVCRenderCommand {
 		return "View";
 	}
 
-	private Map<String, Object> _blogMapper(BlogsEntry blog) {
+	private Map<String, Object> _blogMapper(
+		BlogsEntry blog, RenderResponse renderResponse) {
+
 		Map<String, Object> blogTemplateContext = new HashMap<>();
 
 		long userId = blog.getUserId();
@@ -92,6 +94,14 @@ public class BlogsWebViewMVCRenderCommand implements MVCRenderCommand {
 		catch (PortalException pe) {
 			pe.printStackTrace();
 		}
+
+		PortletURL editBlogUrl = renderResponse.createRenderURL();
+
+		editBlogUrl.setParameter("mvcRenderCommandName", "Edit");
+		editBlogUrl.setParameter(
+			"blogEntryId", String.valueOf(blog.getEntryId()));
+
+		blogTemplateContext.put("editUrl", editBlogUrl.toString());
 
 		blogTemplateContext.put("title", blog.getTitle());
 

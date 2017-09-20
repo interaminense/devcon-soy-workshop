@@ -17,13 +17,11 @@ package blogs.web.portlet.action;
 import blogs.web.constants.BlogsWebPortletKeys;
 
 import com.liferay.blogs.kernel.service.BlogsEntryLocalService;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
-import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -45,11 +43,11 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + BlogsWebPortletKeys.BlogsWeb,
-		"mvc.command.name=Save"
+		"mvc.command.name=Edit"
 	},
 	service = MVCActionCommand.class
 )
-public class BlogsWebSaveMVCActionCommand extends BaseMVCActionCommand {
+public class BlogsWebEditMVCActionCommand extends BaseMVCActionCommand {
 
 	@Override
 	protected void doProcessAction(
@@ -59,30 +57,24 @@ public class BlogsWebSaveMVCActionCommand extends BaseMVCActionCommand {
 		String title = ParamUtil.getString(actionRequest, "title");
 		String content = ParamUtil.getString(actionRequest, "content");
 
+		long blogEntryId = ParamUtil.getLong(actionRequest, "blogEntryId");
+
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
 			actionRequest);
 
 		long userId = PortalUtil.getUserId(actionRequest);
+
+		_blogsEntryLocalService.updateEntry(
+			userId, blogEntryId, title, StringPool.BLANK, StringPool.BLANK,
+			content, new Date(), false, false, null, StringPool.BLANK, null,
+			null, serviceContext);
 
 		LiferayPortletResponse liferayPortletResponse =
 			_portal.getLiferayPortletResponse(actionResponse);
 
 		PortletURL portletURL = liferayPortletResponse.createRenderURL();
 
-		try {
-			_blogsEntryLocalService.addEntry(
-				userId, title, StringPool.BLANK, StringPool.BLANK, content,
-				new Date(), false, false, null, StringPool.BLANK, null, null,
-				serviceContext);
-
-			portletURL.setParameter("mvcRenderCommandName", "View");
-		}
-		catch (PortalException pe) {
-			SessionErrors.add(
-				actionRequest, "Sorry, an error occurred with your request.");
-
-			portletURL.setParameter("mvcRenderCommandName", "Edit");
-		}
+		portletURL.setParameter("mvcRenderCommandName", "View");
 
 		sendRedirect(actionRequest, actionResponse, portletURL.toString());
 	}
