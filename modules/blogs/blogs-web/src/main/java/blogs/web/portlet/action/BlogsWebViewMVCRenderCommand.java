@@ -14,19 +14,28 @@
 
 package blogs.web.portlet.action;
 
-import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
-import com.liferay.portal.kernel.template.Template;
-import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ReleaseInfo;
-import com.liferay.portal.kernel.util.WebKeys;
-
 import blogs.web.constants.BlogsWebPortletKeys;
 
-import javax.portlet.PortletURL;
+import com.liferay.blogs.kernel.model.BlogsEntry;
+import com.liferay.blogs.kernel.service.BlogsEntryLocalService;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.template.Template;
+import com.liferay.portal.kernel.util.WebKeys;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Bruno Basto
@@ -34,13 +43,12 @@ import org.osgi.service.component.annotations.Component;
 @Component(
 	immediate = true,
 	property = {
-		"javax.portlet.name=" + BlogsWebPortletKeys.BlogsWeb, "mvc.command.name=/",
-		"mvc.command.name=View"
+		"javax.portlet.name=" + BlogsWebPortletKeys.BlogsWeb,
+		"mvc.command.name=/", "mvc.command.name=View"
 	},
 	service = MVCRenderCommand.class
 )
-public class BlogsWebViewMVCRenderCommand
-	implements MVCRenderCommand {
+public class BlogsWebViewMVCRenderCommand implements MVCRenderCommand {
 
 	@Override
 	public String render(
@@ -49,22 +57,44 @@ public class BlogsWebViewMVCRenderCommand
 		Template template = (Template)renderRequest.getAttribute(
 			WebKeys.TEMPLATE);
 
-		PortletURL navigationURL = renderResponse.createRenderURL();
+		List<BlogsEntry> blogs = _blogsEntryLocalService.getBlogsEntries(
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
-		navigationURL.setParameter("mvcRenderCommandName", "Navigation");
-		
-		template.put("navigationURL", navigationURL.toString());
-		
-		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
-			WebKeys.THEME_DISPLAY);
-
-		template.put("layouts", themeDisplay.getLayouts());
-
-		template.put("navigationURL", navigationURL.toString());
-
-		template.put("releaseInfo", ReleaseInfo.getReleaseInfo());
+		template.put(
+			"blogs",
+			blogs
+				.stream()
+				.map(blog -> _blogMapper(blog))
+				.collect(Collectors.toList()));
 
 		return "View";
 	}
+
+	private Map<String, Object> _blogMapper(BlogsEntry blog) {
+		Map<String, Object> blogTemplateContext = new HashMap<>();
+
+		long userId = blog.getUserId();
+
+		try {
+			User author = _userLocalService.getUserById(userId);
+
+			blogTemplateContext.put("authorEmail", author.getEmailAddress());
+			blogTemplateContext.put("authorInitials", author.getInitials());
+			blogTemplateContext.put("authorName", author.getFullName());
+		}
+		catch (PortalException pe) {
+			pe.printStackTrace();
+		}
+
+		blogTemplateContext.put("title", blog.getTitle());
+
+		return blogTemplateContext;
+	}
+
+	@Reference
+	private BlogsEntryLocalService _blogsEntryLocalService;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 }

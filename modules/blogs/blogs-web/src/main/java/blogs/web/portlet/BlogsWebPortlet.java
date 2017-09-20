@@ -14,13 +14,13 @@
 
 package blogs.web.portlet;
 
-import javax.portlet.Portlet;
-
-import org.osgi.service.component.annotations.Component;
+import blogs.web.constants.BlogsWebPortletKeys;
 
 import com.liferay.portal.portlet.bridge.soy.SoyPortlet;
 
-import blogs.web.constants.BlogsWebPortletKeys;
+import javax.portlet.Portlet;
+
+import org.osgi.service.component.annotations.Component;
 
 /**
  * @author Bruno Basto
@@ -29,8 +29,8 @@ import blogs.web.constants.BlogsWebPortletKeys;
 	immediate = true,
 	property = {
 		"com.liferay.portlet.display-category=category.sample",
-		"com.liferay.portlet.single-page-application=false",
 		"com.liferay.portlet.instanceable=false",
+		"com.liferay.portlet.single-page-application=false",
 		"javax.portlet.display-name=Devcon Blogs Portlet",
 		"javax.portlet.init-param.template-path=/",
 		"javax.portlet.init-param.view-template=View",
